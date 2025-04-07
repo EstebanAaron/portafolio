@@ -21,11 +21,11 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # Instala Composer desde la imagen oficial de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configura el directorio de trabajo
-WORKDIR /var/www
+# Configura el directorio de trabajo a la carpeta laravel-app
+WORKDIR /var/www/laravel-app
 
-# Copia los archivos del proyecto al contenedor
-COPY . .
+# Copia los archivos del proyecto (la carpeta laravel-app) al contenedor
+COPY ./laravel-app /var/www/laravel-app
 
 # Instala las dependencias de Composer
 RUN composer install --no-dev --optimize-autoloader
