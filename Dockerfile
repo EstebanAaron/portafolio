@@ -19,7 +19,8 @@ RUN apt-get update && apt-get install -y \
     # Nginx y herramientas
     nginx \
     curl \
-    gettext-base \  # Para envsubst
+    gettext-base \  
+    # Para envsubst
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
