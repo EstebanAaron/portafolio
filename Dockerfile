@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     # Herramientas útiles
     curl \
+    # Instalar Nginx
+    nginx \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -43,13 +45,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/laravel-app
 
 # Copia solo los archivos necesarios para composer install primero (optimización de caché)
-COPY ./laravel-app/composer.json ./laravel-app/composer.lock ./
+COPY ./laravel-app/composer.json ./laravel-app/composer.lock ./laravel-app/
 
 # Instala dependencias (sin scripts para evitar problemas)
 RUN composer install --no-dev --no-scripts --no-autoloader --optimize-autoloader
 
 # Copia el resto de la aplicación
-COPY ./laravel-app .
+COPY ./laravel-app ./
 
 # Completa la instalación
 RUN composer dump-autoload --optimize \
@@ -63,7 +65,12 @@ RUN chown -R www-data:www-data /var/www/laravel-app/storage \
 # Render usa puerto dinámico, lo pasaremos via CMD
 EXPOSE 8000
 
+# Copiar archivo de configuración de Nginx
+COPY ./nginx.conf /etc/nginx/sites-available/default
+
 # Script de inicio personalizado
 COPY ./docker/start.sh /usr/local/bin/start
 RUN chmod +x /usr/local/bin/start
+
+# Comando para iniciar el script de inicio
 CMD ["start"]
