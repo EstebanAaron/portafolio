@@ -1,4 +1,3 @@
-# Usamos imagen base de PHP 8.3 con FPM
 FROM php:8.3-fpm
 
 # ===== 1. Instalar dependencias =====
@@ -16,28 +15,17 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     zlib1g-dev \
     libonig-dev \
+    libpq-dev \ 
+    #dependencia para pdo_pgsql
     # Nginx y herramientas
     nginx \
     curl \
-    gettext-base \  
-    # Para envsubst
+    gettext-base \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # ===== 2. Instalar extensiones PHP =====
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j$(nproc) \
-    gd \
-    pdo \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    zip \
-    intl \
-    xml \
-    opcache
+RUN apt-get update && docker-php-ext-install -j$(nproc) pdo_pgsql gd pdo_mysql mbstring exif pcntl bcmath zip intl xml opcache
 
 # ===== 3. Configurar Nginx =====
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
@@ -59,8 +47,5 @@ RUN composer install --no-dev --no-scripts --no-autoloader \
 RUN chown -R www-data:www-data /var/www/laravel-app/storage \
     /var/www/laravel-app/bootstrap/cache
 
-    RUN docker-php-ext-install pdo_pgsql
-
 # ===== 7. Puerto y comando de inicio =====
-EXPOSE 8000
-CMD ["sh", "-c", "php-fpm -D && envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx"]
+CMD ["sh", "-c", "php-fpm -D && envsubst '$PORT' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx"]
