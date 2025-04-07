@@ -1,9 +1,9 @@
 # Usamos imagen base de PHP 8.3 con FPM
 FROM php:8.3-fpm
 
-# ===== INSTALACIÓN DE DEPENDENCIAS =====
+# ===== 1. Instalar dependencias =====
 RUN apt-get update && apt-get install -y \
-    # Dependencias para extensiones PHP
+    # Dependencias para PHP
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
@@ -16,14 +16,13 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     zlib1g-dev \
     libonig-dev \
-    # Herramientas útiles
-    curl \
-    # Instalar Nginx
+    # Nginx y herramientas
     nginx \
+    curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# ===== EXTENSIONES PHP =====
+# ===== 2. Instalar extensiones PHP =====
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
     gd \
@@ -38,39 +37,28 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     xml \
     opcache
 
-# ===== COMPOSER =====
+# ===== 3. Configurar Nginx =====
+RUN rm /etc/nginx/sites-enabled/default
+COPY docker/nginx/default.conf /etc/nginx/sites-available/laravel
+RUN ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/ \
+    && echo "daemon off;" >> /etc/nginx/nginx.conf
+
+# ===== 4. Instalar Composer =====
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# ===== CONFIGURACIÓN DE LARAVEL =====
+# ===== 5. Configurar Laravel =====
 WORKDIR /var/www/laravel-app
+COPY ./laravel-app .
 
-# Copia solo los archivos necesarios para composer install primero (optimización de caché)
-COPY ./laravel-app/composer.json ./laravel-app/composer.lock ./laravel-app/
-
-# Instala dependencias (sin scripts para evitar problemas)
-RUN composer install --no-dev --no-scripts --no-autoloader --optimize-autoloader
-
-# Copia el resto de la aplicación
-COPY ./laravel-app ./
-
-# Completa la instalación
-RUN composer dump-autoload --optimize \
+# Instalar dependencias (optimizado para caché de Docker)
+RUN composer install --no-dev --no-scripts --no-autoloader \
+    && composer dump-autoload --optimize \
     && composer run-script post-autoload-dump
 
-# ===== PERMISOS =====
+# ===== 6. Permisos =====
 RUN chown -R www-data:www-data /var/www/laravel-app/storage \
     /var/www/laravel-app/bootstrap/cache
 
-# ===== CONFIGURACIÓN PARA RENDER =====
-# Render usa puerto dinámico, lo pasaremos via CMD
+# ===== 7. Puerto y comando de inicio =====
 EXPOSE 8000
-
-# Copiar archivo de configuración de Nginx
-COPY ./nginx.conf /etc/nginx/sites-available/default
-
-# Script de inicio personalizado
-COPY ./docker/start.sh /usr/local/bin/start
-RUN chmod +x /usr/local/bin/start
-
-# Comando para iniciar el script de inicio
-CMD ["start"]
+CMD ["sh", "-c", "php-fpm -D && nginx"]
