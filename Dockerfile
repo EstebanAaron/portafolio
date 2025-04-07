@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     # Nginx y herramientas
     nginx \
     curl \
+    gettext-base \  # Para envsubst
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -38,10 +39,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     opcache
 
 # ===== 3. Configurar Nginx =====
-RUN rm /etc/nginx/sites-enabled/default
-COPY docker/nginx/default.conf /etc/nginx/sites-available/laravel
-RUN ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/ \
-    && echo "daemon off;" >> /etc/nginx/nginx.conf
+COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
 # ===== 4. Instalar Composer =====
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -61,4 +60,4 @@ RUN chown -R www-data:www-data /var/www/laravel-app/storage \
 
 # ===== 7. Puerto y comando de inicio =====
 EXPOSE 8000
-CMD ["sh", "-c", "php-fpm -D && nginx"]
+CMD ["sh", "-c", "php-fpm -D && envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx"]
