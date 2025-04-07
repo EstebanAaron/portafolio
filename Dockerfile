@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     && apt-get clean
 
-# Instala las extensiones de PHP necesarias
+# Instala las extensiones de PHP necesarias (gd, pdo, pdo_mysql, mbstring, exif, pcntl, bcmath, zip)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql mbstring exif pcntl bcmath zip
 
