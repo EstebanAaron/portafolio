@@ -59,6 +59,8 @@ RUN composer install --no-dev --no-scripts --no-autoloader \
 RUN chown -R www-data:www-data /var/www/laravel-app/storage \
     /var/www/laravel-app/bootstrap/cache
 
+    RUN docker-php-ext-install pdo_pgsql
+
 # ===== 7. Puerto y comando de inicio =====
 EXPOSE 8000
 CMD ["sh", "-c", "php-fpm -D && envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx"]
