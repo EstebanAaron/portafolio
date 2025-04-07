@@ -47,5 +47,16 @@ RUN composer install --no-dev --no-scripts --no-autoloader \
 RUN chown -R www-data:www-data /var/www/laravel-app/storage \
     /var/www/laravel-app/bootstrap/cache
 
+    # ===== 1. Instalar Node.js y NPM =====
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+apt-get install -y nodejs && \
+npm install -g npm
+
+# ===== 2. Instalar dependencias y compilar assets =====
+WORKDIR /var/www/laravel-app
+COPY ./laravel-app/package.json ./laravel-app/package-lock.json ./
+RUN npm install && \
+npm run build && \
+rm -rf node_modules
 # ===== 7. Puerto y comando de inicio =====
 CMD ["sh", "-c", "php-fpm -D && envsubst '$PORT' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx"]
