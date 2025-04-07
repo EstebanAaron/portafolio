@@ -41,13 +41,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/laravel-app
 
 # Copia solo los archivos necesarios para composer install primero
-COPY ./laravel-app/composer.json ./laravel-app/composer.lock ./
+COPY ./laravel-app/composer.json ./laravel-app/composer.lock ./ 
 
 # Instala dependencias de Composer (sin scripts para evitar problemas)
 RUN composer install --no-dev --no-scripts --no-autoloader --optimize-autoloader
 
 # Copia el resto de los archivos del proyecto
-COPY ./laravel-app .
+COPY ./laravel-app . 
 
 # Completa la instalación de Composer
 RUN composer dump-autoload --optimize \
@@ -57,8 +57,8 @@ RUN composer dump-autoload --optimize \
 RUN chown -R www-data:www-data /var/www/laravel-app/storage \
     /var/www/laravel-app/bootstrap/cache
 
-# Expone el puerto 9000 para PHP-FPM
-EXPOSE 9000
+# Exponer el puerto 80 para HTTP (Cambiar de 9000 a 80)
+EXPOSE 80
 
 # Comando de inicio
-CMD ["php-fpm"]
+CMD ["php-fpm", "-F"]
