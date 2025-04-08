@@ -19,7 +19,9 @@ class ProjectController extends Controller
     }
 
     public function store(Request $request)
-    {
+    {     
+    $data = $request->except('_token'); // Remove CSRF token
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
